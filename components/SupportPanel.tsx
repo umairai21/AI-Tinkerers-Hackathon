@@ -7,6 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { TrackingCard, EligibilityCard } from "./cards";
 import { ReplacementConfirmCard } from "./ReplacementConfirmCard";
 import { ORDERCARE_INSTRUCTIONS } from "@/lib/prompt";
+import { SpokenReplies } from "./SpokenReplies";
 import { useEffect, useRef } from "react";
 
 export type OrderContext = {
@@ -161,48 +162,51 @@ export function SupportPanel({
   });
 
   return (
-    <CopilotSidebar
-      instructions={ORDERCARE_INSTRUCTIONS}
-      defaultOpen={open}
-      onSetOpen={onOpenChange}
-      labels={{
-        title: "OrderCare Support",
-        initial: `Hi! I can see you're on Order #${order.orderId} (${order.productName}), currently ${order.status}. How can I help?`,
-      }}
-      attachments={{
-        enabled: true,
-        accept: "image/*",
-        maxSize: 8 * 1024 * 1024,
-        onUpload: async (file) => {
-          const dataUrl: string = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
-          lastImageUrlRef.current = dataUrl;
-
-          let description = "";
-          try {
-            const res = await fetch("/api/analyze-image", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ imageUrl: dataUrl, productName: order.productName }),
+    <>
+      <SpokenReplies />
+      <CopilotSidebar
+        instructions={ORDERCARE_INSTRUCTIONS}
+        defaultOpen={open}
+        onSetOpen={onOpenChange}
+        labels={{
+          title: "OrderCare Support",
+          initial: `Hi! I can see you're on Order #${order.orderId} (${order.productName}), currently ${order.status}. How can I help?`,
+        }}
+        attachments={{
+          enabled: true,
+          accept: "image/*",
+          maxSize: 8 * 1024 * 1024,
+          onUpload: async (file) => {
+            const dataUrl: string = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
             });
-            const data = await res.json();
-            description = data.description || "";
-          } catch {
-            // Analysis is a best-effort aid; the model can still see the raw image.
-          }
+            lastImageUrlRef.current = dataUrl;
 
-          return {
-            type: "data",
-            value: dataUrl.split(",")[1] ?? dataUrl,
-            mimeType: file.type,
-            metadata: description ? { analysis: description } : undefined,
-          };
-        },
-      }}
-    />
+            let description = "";
+            try {
+              const res = await fetch("/api/analyze-image", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ imageUrl: dataUrl, productName: order.productName }),
+              });
+              const data = await res.json();
+              description = data.description || "";
+            } catch {
+              // Analysis is a best-effort aid; the model can still see the raw image.
+            }
+
+            return {
+              type: "data",
+              value: dataUrl.split(",")[1] ?? dataUrl,
+              mimeType: file.type,
+              metadata: description ? { analysis: description } : undefined,
+            };
+          },
+        }}
+      />
+    </>
   );
 }

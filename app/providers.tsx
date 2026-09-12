@@ -14,7 +14,14 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <ConvexProvider client={convex}>
-      <CopilotKit runtimeUrl={runtimeUrl} enableInspector={false}>{children}</CopilotKit>
+      <CopilotKit
+        runtimeUrl={runtimeUrl}
+        enableInspector={false}
+        transcribeAudioUrl="/api/transcribe"
+        textToSpeechUrl="/api/tts"
+      >
+        {children}
+      </CopilotKit>
     </ConvexProvider>
   );
 }

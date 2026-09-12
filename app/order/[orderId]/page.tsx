@@ -91,7 +91,6 @@ function OrderPageContent({ params }: { params: Promise<{ orderId: string }> }) 
       )}
 
       <SupportPanel
-        key={supportOpen ? "support-open" : "support-closed"}
         order={{
           orderId: order.orderId,
           customerId: order.customerId,
