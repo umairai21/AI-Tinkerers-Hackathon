@@ -1,22 +1,18 @@
-import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
-
-const openrouter = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: "https://openrouter.ai/api/v1",
-});
+import { openrouter, OPENROUTER_MODEL } from "@/lib/openrouter";
 
 // Lightweight vision pass: describe likely damage, never a definitive diagnosis.
 export async function POST(req: NextRequest) {
-  const { imageUrl, productName } = await req.json();
+  const body: unknown = await req.json().catch(() => null);
+  const { imageUrl, productName } = (body ?? {}) as Record<string, unknown>;
 
-  if (!imageUrl) {
-    return NextResponse.json({ error: "imageUrl is required" }, { status: 400 });
+  if (typeof imageUrl !== "string" || !imageUrl.startsWith("data:image/")) {
+    return NextResponse.json({ error: "imageUrl must be an image data URL" }, { status: 400 });
   }
 
   try {
     const response = await openrouter.chat.completions.create({
-      model: process.env.OPENROUTER_MODEL || "anthropic/claude-3.5-sonnet",
+      model: OPENROUTER_MODEL,
       messages: [
         {
           role: "system",
@@ -28,7 +24,7 @@ export async function POST(req: NextRequest) {
           content: [
             {
               type: "text",
-              text: `This is a photo submitted with a support request for a ${productName ?? "product"}. Describe what appears consistent with damage, if any.`,
+              text: `This is a photo submitted with a support request for a ${typeof productName === "string" ? productName : "product"}. Describe what appears consistent with damage, if any.`,
             },
             { type: "image_url", image_url: { url: imageUrl } },
           ],

@@ -1,19 +1,26 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getOwnedOrder } from "./customer";
 
 // Scoped to product-issue/support-case data only.
+
+// Evidence photos go to Convex file storage; the case stores only the storage ID.
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
 export const createSupportCase = mutation({
   args: {
     orderId: v.string(),
     issueType: v.string(),
     description: v.string(),
-    imageUrl: v.optional(v.string()),
+    imageStorageId: v.optional(v.id("_storage")),
   },
-  handler: async (ctx, { orderId, issueType, description, imageUrl }) => {
-    const order = await ctx.db
-      .query("orders")
-      .withIndex("by_orderId", (q) => q.eq("orderId", orderId))
-      .unique();
+  handler: async (ctx, { orderId, issueType, description, imageStorageId }) => {
+    const order = await getOwnedOrder(ctx, orderId);
     if (!order) {
       return { success: false as const, reason: "Order not found." };
     }
@@ -29,7 +36,7 @@ export const createSupportCase = mutation({
       await ctx.db.patch(existing._id, {
         issueType,
         description,
-        imageUrl: imageUrl ?? existing.imageUrl,
+        imageStorageId: imageStorageId ?? existing.imageStorageId,
       });
       return { success: true as const, caseId: existing._id, status: existing.status };
     }
@@ -38,7 +45,7 @@ export const createSupportCase = mutation({
       orderId,
       issueType,
       description,
-      imageUrl,
+      imageStorageId,
       status: "open",
       createdAt: Date.now(),
     });
@@ -50,17 +57,22 @@ export const createSupportCase = mutation({
 export const getSupportCase = query({
   args: { orderId: v.string() },
   handler: async (ctx, { orderId }) => {
-    const cases = await ctx.db
+    const order = await getOwnedOrder(ctx, orderId);
+    if (!order) return null;
+
+    const latest = await ctx.db
       .query("supportCases")
       .withIndex("by_orderId", (q) => q.eq("orderId", orderId))
-      .collect();
-    if (cases.length === 0) return null;
-    const latest = cases.sort((a, b) => b.createdAt - a.createdAt)[0];
+      .order("desc")
+      .first();
+    if (!latest) return null;
     return {
       caseId: latest._id,
       issueType: latest.issueType,
       description: latest.description,
-      imageUrl: latest.imageUrl,
+      imageUrl: latest.imageStorageId
+        ? await ctx.storage.getUrl(latest.imageStorageId)
+        : (latest.imageUrl ?? null),
       status: latest.status,
     };
   },

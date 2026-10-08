@@ -1,14 +1,12 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
+import { getOwnedOrder } from "./customer";
 
 // Scoped to tracking data only.
 export const getTrackingStatus = query({
   args: { orderId: v.string() },
   handler: async (ctx, { orderId }) => {
-    const order = await ctx.db
-      .query("orders")
-      .withIndex("by_orderId", (q) => q.eq("orderId", orderId))
-      .unique();
+    const order = await getOwnedOrder(ctx, orderId);
     if (!order) {
       return { found: false as const };
     }
@@ -25,10 +23,13 @@ export const getTrackingStatus = query({
 export const getTrackingHistory = query({
   args: { orderId: v.string() },
   handler: async (ctx, { orderId }) => {
+    const order = await getOwnedOrder(ctx, orderId);
+    if (!order) return [];
+
     const events = await ctx.db
       .query("trackingEvents")
       .withIndex("by_orderId", (q) => q.eq("orderId", orderId))
-      .collect();
+      .take(100);
     return events
       .sort((a, b) => a.timestamp - b.timestamp)
       .map((e) => ({

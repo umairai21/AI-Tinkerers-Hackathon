@@ -12,7 +12,9 @@ export default defineSchema({
     eta: v.string(),
     purchasedAt: v.number(),
     returnEligible: v.boolean(),
-  }).index("by_orderId", ["orderId"]),
+  })
+    .index("by_orderId", ["orderId"])
+    .index("by_customerId", ["customerId"]),
 
   products: defineTable({
     productId: v.string(),
@@ -26,6 +28,8 @@ export default defineSchema({
     orderId: v.string(),
     issueType: v.string(),
     description: v.string(),
+    imageStorageId: v.optional(v.id("_storage")),
+    // Legacy: inline data URLs from before file storage. New cases use imageStorageId.
     imageUrl: v.optional(v.string()),
     status: v.string(),
     resolution: v.optional(v.string()),

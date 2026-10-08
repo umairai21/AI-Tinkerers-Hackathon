@@ -2,7 +2,8 @@
 
 import { useCopilotAction, useCopilotReadable, useCopilotChat } from "@copilotkit/react-core";
 import { CopilotSidebar } from "@copilotkit/react-ui";
-import { useConvex } from "convex/react";
+import { useConvex, useMutation } from "convex/react";
+import { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { TrackingCard, EligibilityCard } from "./cards";
 import { ReplacementConfirmCard } from "./ReplacementConfirmCard";
@@ -28,7 +29,8 @@ export function SupportPanel({
   onOpenChange: (open: boolean) => void;
 }) {
   const convex = useConvex();
-  const lastImageUrlRef = useRef<string | null>(null);
+  const lastImageIdRef = useRef<Id<"_storage"> | null>(null);
+  const generateUploadUrl = useMutation(api.supportCases.generateUploadUrl);
   const { reset } = useCopilotChat();
   const previousOrderIdRef = useRef(order.orderId);
 
@@ -99,19 +101,13 @@ export function SupportPanel({
         description: "A short label for the issue, e.g. cracked_screen, water_damage, physical_damage.",
         required: false,
       },
-      {
-        name: "imageUrl",
-        type: "string",
-        description: "Data URL of the uploaded evidence image, if the customer provided one.",
-        required: false,
-      },
     ],
-    handler: async ({ description, issueType, imageUrl }) => {
+    handler: async ({ description, issueType }) => {
       const caseResult = await convex.mutation(api.supportCases.createSupportCase, {
         orderId: order.orderId,
         issueType: issueType || "product_issue",
         description,
-        imageUrl: imageUrl || lastImageUrlRef.current || undefined,
+        imageStorageId: lastImageIdRef.current ?? undefined,
       });
       if (!caseResult.success) {
         return { success: false, reason: caseResult.reason };
@@ -142,19 +138,11 @@ export function SupportPanel({
     name: "confirmReplacement",
     description:
       "Create a replacement request for the current order. This is a consequential action: only call it after the customer has explicitly agreed to proceed.",
-    parameters: [
-      {
-        name: "caseId",
-        type: "string",
-        description: "The support case ID this replacement is for, if known.",
-        required: false,
-      },
-    ],
-    renderAndWaitForResponse: ({ args, respond, status }) => (
+    parameters: [],
+    renderAndWaitForResponse: ({ respond, status }) => (
       <ReplacementConfirmCard
         orderId={order.orderId}
         productName={order.productName}
-        caseId={args.caseId}
         status={status}
         respond={respond}
       />
@@ -183,7 +171,20 @@ export function SupportPanel({
               reader.onerror = reject;
               reader.readAsDataURL(file);
             });
-            lastImageUrlRef.current = dataUrl;
+
+            // Persist the original file in Convex storage; the support case keeps only its ID.
+            try {
+              const uploadUrl = await generateUploadUrl();
+              const uploadRes = await fetch(uploadUrl, {
+                method: "POST",
+                headers: { "Content-Type": file.type },
+                body: file,
+              });
+              const { storageId } = await uploadRes.json();
+              lastImageIdRef.current = storageId;
+            } catch {
+              // Storage is for the case record; the chat can continue without it.
+            }
 
             let description = "";
             try {

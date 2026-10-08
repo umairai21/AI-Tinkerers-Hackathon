@@ -3,17 +3,15 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 
 type Props = {
   orderId: string;
   productName: string;
-  caseId?: string;
   status: "inProgress" | "executing" | "complete";
   respond?: (value: string) => void;
 };
 
-export function ReplacementConfirmCard({ orderId, productName, caseId, status, respond }: Props) {
+export function ReplacementConfirmCard({ orderId, productName, status, respond }: Props) {
   const createReplacement = useMutation(api.returns.createReplacement);
   const [outcome, setOutcome] = useState<"pending" | "loading" | "confirmed" | "cancelled" | "error">(
     "pending"
@@ -23,10 +21,7 @@ export function ReplacementConfirmCard({ orderId, productName, caseId, status, r
   const handleConfirm = async () => {
     setOutcome("loading");
     try {
-      const result = await createReplacement({
-        orderId,
-        caseId: caseId as Id<"supportCases"> | undefined,
-      });
+      const result = await createReplacement({ orderId });
       if (result.success) {
         setOutcome("confirmed");
         respond?.("Replacement request created successfully.");

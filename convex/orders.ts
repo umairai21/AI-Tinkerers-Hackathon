@@ -1,11 +1,16 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
+import { getCurrentCustomerId, getOwnedOrder } from "./customer";
 
-// Demo helper: list all orders for the "My Orders" page. Single-customer app for now.
+// Lists the current customer's orders for the "My Orders" page.
 export const listOrders = query({
   args: {},
   handler: async (ctx) => {
-    const orders = await ctx.db.query("orders").collect();
+    const customerId = await getCurrentCustomerId(ctx);
+    const orders = await ctx.db
+      .query("orders")
+      .withIndex("by_customerId", (q) => q.eq("customerId", customerId))
+      .take(50);
 
     const results = [];
     for (const order of orders) {
@@ -27,10 +32,7 @@ export const listOrders = query({
 export const getOrder = query({
   args: { orderId: v.string() },
   handler: async (ctx, { orderId }) => {
-    const order = await ctx.db
-      .query("orders")
-      .withIndex("by_orderId", (q) => q.eq("orderId", orderId))
-      .unique();
+    const order = await getOwnedOrder(ctx, orderId);
     if (!order) return null;
 
     const product = await ctx.db
