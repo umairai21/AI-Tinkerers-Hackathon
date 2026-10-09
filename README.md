@@ -9,7 +9,7 @@ Built for the AI Tinkerers hackathon.
 - **Tracking** — the agent looks up live status, location and ETA and renders a tracking card in the chat.
 - **Product issues** — the customer describes a problem (optionally with a photo). The agent opens a support case and checks return/replacement eligibility.
 - **Photo triage** — uploaded photos are stored in Convex file storage and run through a vision model, which describes visible damage in cautious "appears consistent with" language rather than diagnosing.
-- **Voice** � push-to-talk speech-to-text input and spoken replies (ElevenLabs). Every assistant reply is read aloud, typed or spoken.
+- **Voice** — push-to-talk speech-to-text input and spoken replies (ElevenLabs). Every assistant reply is read aloud, typed or spoken.
 - **Replacements (human-in-the-loop)** — the agent can propose a replacement, but nothing is created until the customer clicks **Confirm Replacement**. Duplicate replacements for the same order are rejected server-side.
 
 ## Stack
