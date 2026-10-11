@@ -1,19 +1,25 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { QueryCtx } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
-// Demo identity: there is no sign-in yet, so every request acts as this customer.
-// The customer is resolved server-side (never taken from client args), so swapping
-// this for `ctx.auth.getUserIdentity()` later is the only change real auth needs.
-const DEMO_CUSTOMER_ID = "C102";
+// Every visitor is signed in anonymously on first load, so each browser gets its own
+// customer identity without a login form. The customer is resolved server-side from
+// the auth token, never taken from client args. Returns null when signed out.
+export async function getCurrentCustomerId(ctx: QueryCtx): Promise<Id<"users"> | null> {
+  return await getAuthUserId(ctx);
+}
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function getCurrentCustomerId(_ctx: QueryCtx): Promise<string> {
-  return DEMO_CUSTOMER_ID;
+export async function requireCustomerId(ctx: QueryCtx): Promise<Id<"users">> {
+  const customerId = await getCurrentCustomerId(ctx);
+  if (!customerId) throw new Error("Not signed in.");
+  return customerId;
 }
 
 // Loads an order only if it belongs to the current customer. Returns null otherwise,
 // so callers can't distinguish "someone else's order" from "no such order".
 export async function getOwnedOrder(ctx: QueryCtx, orderId: string) {
   const customerId = await getCurrentCustomerId(ctx);
+  if (!customerId) return null;
   const order = await ctx.db
     .query("orders")
     .withIndex("by_orderId", (q) => q.eq("orderId", orderId))

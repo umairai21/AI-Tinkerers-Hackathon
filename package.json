@@ -10,6 +10,8 @@
     "seed": "convex run seed:seed"
   },
   "dependencies": {
+    "@auth/core": "^0.41.3",
+    "@convex-dev/auth": "^0.0.96",
     "@copilotkit/react-core": "^1.71.1",
     "@copilotkit/react-ui": "^1.71.1",
     "@copilotkit/runtime": "^1.71.1",

@@ -13,7 +13,12 @@
 }
 
 body {
-  background: var(--background);
+  /* Soft indigo/sky glow at the top so the light page doesn't feel empty. */
+  background:
+    radial-gradient(1100px 480px at 0% -8%, #e0e7ff 0%, transparent 60%),
+    radial-gradient(900px 420px at 100% -4%, #e0f2fe 0%, transparent 55%),
+    var(--background);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
 }
@@ -33,8 +38,30 @@ body {
 .copilotKitWindow {
   border-radius: 20px;
   border: 1px solid var(--copilot-kit-separator-color);
-  box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 24px 48px -16px rgba(15, 23, 42, 0.22);
   overflow: hidden;
+}
+
+/* Sidebar as a floating panel below the site header, a little wider than the default. */
+@media (min-width: 640px) {
+  .copilotKitSidebar .copilotKitWindow {
+    top: 76px;
+    bottom: 12px;
+    right: 12px;
+    width: 30rem;
+    min-height: 0;
+    height: auto;
+    /* Slide fully off-screen when closed, past the inset and shadow. */
+    transform: translateX(calc(100% + 48px));
+  }
+
+  .copilotKitSidebar .copilotKitWindow.open {
+    transform: translateX(0);
+  }
+
+  .copilotKitSidebarContentWrapper.sidebarExpanded {
+    margin-right: 31.5rem;
+  }
 }
 
 .copilotKitHeader {
@@ -59,16 +86,43 @@ body {
 }
 
 .copilotKitMessages {
-  background: var(--copilot-kit-background-color);
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 .copilotKitMessage {
   border-radius: 16px;
-  line-height: 1.5;
+  line-height: 1.55;
+  font-size: 0.925rem;
+}
+
+.copilotKitMessage.copilotKitUserMessage {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 6px 16px -8px rgba(79, 70, 229, 0.55);
 }
 
 .copilotKitMessage.copilotKitAssistantMessage {
+  background: #ffffff;
   border: 1px solid var(--copilot-kit-separator-color);
+  border-bottom-left-radius: 6px;
+  padding: 10px 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* Quick-reply chips */
+.copilotKitMessages footer .suggestions .suggestion {
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid #c7d2fe;
+  color: #4338ca;
+  border-radius: 999px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.copilotKitMessages footer .suggestions .suggestion:hover {
+  background: #eef2ff;
+  border-color: #a5b4fc;
 }
 
 .copilotKitInputContainer {

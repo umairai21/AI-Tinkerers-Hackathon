@@ -1,7 +1,9 @@
-import { mutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server";
 
-// Wipes and recreates demo data. Run with: npx convex run seed:seed
-export const seed = mutation({
+// Wipes order data and recreates the product catalog. Orders now come from real
+// checkouts, each owned by the visitor's anonymous user. Internal so a public visitor
+// can't call it. Run with: npx convex run seed:seed
+export const seed = internalMutation({
   args: {},
   handler: async (ctx) => {
     for (const table of [
@@ -15,99 +17,54 @@ export const seed = mutation({
       for (const row of rows) await ctx.db.delete(row._id);
     }
 
-    const now = Date.now();
-    const day = 24 * 60 * 60 * 1000;
-
-    await ctx.db.insert("products", {
-      productId: "iphone16",
-      name: "iPhone 16",
-      category: "smartphone",
-      replacementAvailable: true,
-      warrantyDays: 365,
-    });
-    await ctx.db.insert("products", {
-      productId: "airpods-pro",
-      name: "AirPods Pro",
-      category: "audio",
-      replacementAvailable: true,
-      warrantyDays: 180,
-    });
-    await ctx.db.insert("products", {
-      productId: "macbook-air",
-      name: "MacBook Air M3",
-      category: "laptop",
-      replacementAvailable: false,
-      warrantyDays: 365,
-    });
-
-    // Primary demo order: iPhone 16, delivered, eligible for replacement.
-    await ctx.db.insert("orders", {
-      orderId: "4821",
-      customerId: "C102",
-      productId: "iphone16",
-      status: "delivered",
-      trackingStatus: "Delivered",
-      trackingLocation: "Customer address, Dubai",
-      eta: "Delivered",
-      purchasedAt: now - 5 * day,
-      returnEligible: true,
-    });
-
-    await ctx.db.insert("trackingEvents", {
-      orderId: "4821",
-      status: "Order placed",
-      location: "Online",
-      timestamp: now - 5 * day,
-    });
-    await ctx.db.insert("trackingEvents", {
-      orderId: "4821",
-      status: "Shipped",
-      location: "Dubai Distribution Center",
-      timestamp: now - 3 * day,
-    });
-    await ctx.db.insert("trackingEvents", {
-      orderId: "4821",
-      status: "Out for delivery",
-      location: "Dubai Distribution Center",
-      timestamp: now - 1 * day,
-    });
-    await ctx.db.insert("trackingEvents", {
-      orderId: "4821",
-      status: "Delivered",
-      location: "Customer address, Dubai",
-      timestamp: now - 0.5 * day,
-    });
-
-    // Secondary orders for realism.
-    await ctx.db.insert("orders", {
-      orderId: "3310",
-      customerId: "C102",
-      productId: "airpods-pro",
-      status: "shipped",
-      trackingStatus: "In transit",
-      trackingLocation: "Abu Dhabi Hub",
-      eta: "Tomorrow by 8 PM",
-      purchasedAt: now - 2 * day,
-      returnEligible: true,
-    });
-    await ctx.db.insert("trackingEvents", {
-      orderId: "3310",
-      status: "Shipped",
-      location: "Abu Dhabi Hub",
-      timestamp: now - 1 * day,
-    });
-
-    await ctx.db.insert("orders", {
-      orderId: "2207",
-      customerId: "C201",
-      productId: "macbook-air",
-      status: "delivered",
-      trackingStatus: "Delivered",
-      trackingLocation: "Customer address, Sharjah",
-      eta: "Delivered",
-      purchasedAt: now - 60 * day,
-      returnEligible: false,
-    });
+    const products = [
+      {
+        productId: "iphone16",
+        name: "iPhone 16",
+        description: "6.1-inch display, A18 chip, 128 GB.",
+        price: 3399,
+        category: "smartphone",
+        replacementAvailable: true,
+        warrantyDays: 365,
+      },
+      {
+        productId: "airpods-pro",
+        name: "AirPods Pro",
+        description: "Active noise cancellation with USB-C case.",
+        price: 949,
+        category: "audio",
+        replacementAvailable: true,
+        warrantyDays: 180,
+      },
+      {
+        productId: "macbook-air",
+        name: "MacBook Air M3",
+        description: "13-inch, 8-core CPU, 256 GB SSD.",
+        price: 4499,
+        category: "laptop",
+        replacementAvailable: false,
+        warrantyDays: 365,
+      },
+      {
+        productId: "apple-watch",
+        name: "Apple Watch Series 10",
+        description: "42 mm aluminium case with sport band.",
+        price: 1599,
+        category: "wearable",
+        replacementAvailable: true,
+        warrantyDays: 365,
+      },
+      {
+        productId: "ipad-air",
+        name: "iPad Air",
+        description: "11-inch Liquid Retina display, M2 chip.",
+        price: 2499,
+        category: "tablet",
+        replacementAvailable: true,
+        warrantyDays: 365,
+      },
+    ];
+    for (const product of products) await ctx.db.insert("products", product);
 
     return { success: true };
   },

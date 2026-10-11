@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { getOwnedOrder } from "./customer";
+import { getOwnedOrder, requireCustomerId } from "./customer";
 
 // Scoped to product-issue/support-case data only.
 
@@ -8,6 +8,7 @@ import { getOwnedOrder } from "./customer";
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
+    await requireCustomerId(ctx);
     return await ctx.storage.generateUploadUrl();
   },
 });

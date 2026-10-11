@@ -1,11 +1,16 @@
 import { defineSchema, defineTable } from "convex/server";
+import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  // users, authSessions, etc. Every visitor gets an anonymous user on first load.
+  ...authTables,
+
   orders: defineTable({
     orderId: v.string(),
-    customerId: v.string(),
+    customerId: v.id("users"),
     productId: v.string(),
+    quantity: v.number(),
     status: v.string(),
     trackingStatus: v.string(),
     trackingLocation: v.string(),
@@ -19,6 +24,8 @@ export default defineSchema({
   products: defineTable({
     productId: v.string(),
     name: v.string(),
+    description: v.string(),
+    price: v.number(),
     category: v.string(),
     replacementAvailable: v.boolean(),
     warrantyDays: v.number(),

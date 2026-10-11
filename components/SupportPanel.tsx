@@ -8,8 +8,10 @@ import { api } from "@/convex/_generated/api";
 import { TrackingCard, EligibilityCard } from "./cards";
 import { ReplacementConfirmCard } from "./ReplacementConfirmCard";
 import { ORDERCARE_INSTRUCTIONS } from "@/lib/prompt";
+import { statusLabel } from "@/lib/shop";
 import { SpokenReplies } from "./SpokenReplies";
-import { useEffect, useRef } from "react";
+import { ChatInput } from "./ChatInput";
+import { ReactNode, useEffect, useRef } from "react";
 
 export type OrderContext = {
   orderId: string;
@@ -19,15 +21,15 @@ export type OrderContext = {
   status: string;
 };
 
-export function SupportPanel({
-  order,
-  open,
-  onOpenChange,
-}: {
-  order: OrderContext;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
+const SUGGESTIONS = [
+  { title: "Where's my order?", message: "Where's my order?" },
+  { title: "Report a problem", message: "There's a problem with my item." },
+  { title: "Can I get a replacement?", message: "Is this order eligible for a replacement?" },
+];
+
+// Page content goes in as children: they share the sidebar's chat context (so a button can
+// open the chat with useChatContext) and shift left when the sidebar opens.
+export function SupportPanel({ order, children }: { order: OrderContext; children: ReactNode }) {
   const convex = useConvex();
   const lastImageIdRef = useRef<Id<"_storage"> | null>(null);
   const generateUploadUrl = useMutation(api.supportCases.generateUploadUrl);
@@ -154,11 +156,12 @@ export function SupportPanel({
       <SpokenReplies />
       <CopilotSidebar
         instructions={ORDERCARE_INSTRUCTIONS}
-        defaultOpen={open}
-        onSetOpen={onOpenChange}
+        Input={ChatInput}
+        clickOutsideToClose={false}
+        suggestions={SUGGESTIONS}
         labels={{
           title: "OrderCare Support",
-          initial: `Hi! I can see you're on Order #${order.orderId} (${order.productName}), currently ${order.status}. How can I help?`,
+          initial: `Hi! I can see you're on Order #${order.orderId} (${order.productName}), currently ${statusLabel(order.status)}. How can I help?`,
         }}
         attachments={{
           enabled: true,
@@ -207,7 +210,9 @@ export function SupportPanel({
             };
           },
         }}
-      />
+      >
+        {children}
+      </CopilotSidebar>
     </>
   );
 }
