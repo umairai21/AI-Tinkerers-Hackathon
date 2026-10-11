@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "convex run seed:seed"
+    "seed": "convex run seed:seed",
+    "setup:auth": "node scripts/setup-auth.mjs"
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
@@ -28,6 +29,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "jose": "^6.2.12",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
